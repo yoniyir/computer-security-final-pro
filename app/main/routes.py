@@ -61,6 +61,12 @@ def change_password():
             flash('Invalid current password')
     return render_template('change_password.html', title='Change Password', form=form)
 
+@main_bp.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if not current_user.is_authenticated:
+        return redirect(url_for('main.forgot_password'))
+
+
 
 @main_bp.route('/logout')
 def logout():
