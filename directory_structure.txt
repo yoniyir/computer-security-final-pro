@@ -1,0 +1,27 @@
+communication_ltd/
+    ├── app/
+    │   ├── static/
+    │   │   ├── css/
+    │   │   ├── js/
+    │   ├── main/
+    │   │   ├── __init__.py
+    │   │   ├── routes.py
+
+    │   ├── templates/
+    │   │   ├── base.html
+    │   │   ├── index.html
+    │   │   ├── register.html
+    │   │   ├── login.html
+    │   │   ├── change_password.html
+    │   │   ├── forgot_password.html
+    │   │   ├── system.html
+    │   ├── __init__.py
+    │   ├── config.py
+    │   ├── models.py
+    │   ├── forms.py
+    ├── env/
+    ├── tests/
+    ├── .gitignore
+    ├── config.py
+    ├── requirements.txt
+    ├── run.py
