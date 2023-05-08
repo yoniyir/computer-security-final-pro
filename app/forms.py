@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
-from wtforms.validators import DataRequired, Email, EqualTo, ValidationError
+from wtforms.validators import DataRequired, Email, EqualTo, ValidationError, Length, Regexp
 from app.models import User
 
 class RegistrationForm(FlaskForm):
@@ -21,9 +21,13 @@ class RegistrationForm(FlaskForm):
             raise ValidationError('Please use a different email address.')
 
 class ChangePasswordForm(FlaskForm):
-    old_password = PasswordField('Current Password', validators=[DataRequired()])
-    new_password = PasswordField('New Password', validators=[DataRequired()])
-    new_password2 = PasswordField('Repeat New Password', validators=[DataRequired(), EqualTo('new_password')])
+    current_password = PasswordField('Current Password', validators=[DataRequired()])
+    new_password = PasswordField('New Password', validators=[
+        DataRequired(),
+        Length(min=10),
+        Regexp('(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_])', message="Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")
+    ])
+    confirm_password = PasswordField('Confirm New Password', validators=[DataRequired(), EqualTo('new_password')])
     submit = SubmitField('Change Password')
 
 class LoginForm(FlaskForm):
