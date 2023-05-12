@@ -1,10 +1,11 @@
-from flask import render_template, flash, redirect, url_for
+from flask import render_template, flash, redirect, url_for, request
 from flask_login import current_user, login_user, logout_user
 from app import db
 from app.forms import LoginForm, RegistrationForm, ChangePasswordForm
 from app.models import User
 from app.main import main_bp
 from datetime import datetime
+
 
 
 @main_bp.route('/')
@@ -31,6 +32,9 @@ def register():
 
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    if not request.is_secure:
+        return 'Please use HTTPS.', 403
+
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = LoginForm()
