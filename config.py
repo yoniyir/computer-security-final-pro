@@ -7,13 +7,15 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Email configuration
-    MAIL_SERVER = 'smtp.example.com'
-    MAIL_PORT = 587
-    MAIL_USE_TLS = True
-    MAIL_USE_SSL = False
-    MAIL_USERNAME = 'your-email@example.com'
-    MAIL_PASSWORD = 'your-email-password'
-    MAIL_DEFAULT_SENDER = 'noreply@example.com'
+    
+    # Flask-Mail configuration
+    MAIL_SERVER = 'smtp.mail.yahoo.com'
+    MAIL_PORT = 465
+    MAIL_USE_TLS = False
+    MAIL_USE_SSL = True
+    MAIL_USERNAME = 'zlray@yahoo.com'
+    MAIL_PASSWORD = 'zuvr123456789'
+
 
     # Password configuration
     PASSWORD_LENGTH = 10
