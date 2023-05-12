@@ -16,6 +16,8 @@ def index():
 
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
+    if not request.is_secure:
+        return 'Please use HTTPS.', 403
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = RegistrationForm()
@@ -49,6 +51,8 @@ def login():
 
 @main_bp.route('/change_password', methods=['GET', 'POST'])
 def change_password():
+    if not request.is_secure:
+        return 'Please use HTTPS.', 403
     if not current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = ChangePasswordForm()
@@ -67,6 +71,9 @@ def change_password():
 
 @main_bp.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
+    if not request.is_secure:
+        return 'Please use HTTPS.', 403
+
     if not current_user.is_authenticated:
         return redirect(url_for('main.forgot_password'))
 
