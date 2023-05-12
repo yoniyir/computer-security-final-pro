@@ -38,7 +38,7 @@
     {% endif %}
   </div>
 </nav>
-
+{% if not current_user.is_authenticated %}
 <div class="container mt-4">
   <h1>Welcome to Communication_LTD!</h1>
   <p>Computer Security course - H.I.T 2023</p>
@@ -51,9 +51,14 @@
     <li>Yoni Yirmiyahu</li>
     <li>Rotem Mor-Haim</li>
   </ul>
-
 </div>
-
+{% endif %}
+{% if current_user.is_authenticated %}
+<div class="container mt-4">
+  <h1>Hello {{current_user.username}}</h1>
+  <h3>You are now logged in to our secured web site!!!</h3>
+</div>
+{% endif %}
 <footer class="footer mt-auto py-3">
   <div class="container">
     <span class="text-muted">Communication_LTD &copy; 2023</span>
