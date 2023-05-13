@@ -13,7 +13,9 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
+    password_reset_token = db.Column(db.String(128))  # new column for reset token
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
+
 
     def __repr__(self):
         return '<User {}>'.format(self.username)

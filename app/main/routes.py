@@ -1,6 +1,6 @@
 from flask import render_template, flash, redirect, url_for, request
 from flask_login import current_user, login_user, logout_user, login_required
-from app import db
+from app import db, mail
 from app.forms import (
     LoginForm,
     RegistrationForm,
@@ -14,6 +14,7 @@ from app.main import main_bp
 from datetime import datetime
 import hashlib
 import secrets
+from flask_mail import Message
 
 
 @main_bp.route("/")
@@ -78,10 +79,6 @@ def change_password():
     return render_template("change_password.html", title="Change Password", form=form)
 
 
-from flask_mail import Message
-from app import mail
-
-
 @main_bp.route("/forgot_password", methods=["GET", "POST"])
 def forgot_password():
     form = ForgotPasswordForm()
@@ -92,16 +89,16 @@ def forgot_password():
             user.password_reset_token = hashlib.sha1(token.encode()).hexdigest()
             db.session.commit()
             # Send the token to the user's email
-            msg = Message(
-                "Password Reset Token",
-                sender="test@gmail.com",
-                recipients=[user.email],
+            msg = f"""To reset your password, please enter the following token:
+                {token}
+                If you did not make this request, please ignore this email."""
+            
+            # Remove the newline character from the email header
+            msg = msg.replace("\n", "")
+
+            mail.send_message(
+                msg, sender="cyberprojhit@zohomail.com", recipients=[user.email]
             )
-            msg.body = f"""To reset your password, please enter the following token:
-{token}
-If you did not make this request, please ignore this email.
-"""
-            mail.send(msg)
             flash("A password reset token has been sent to your email.", "info")
             return redirect(url_for("main.reset_password"))
         flash("No user found with that email address.", "warning")
@@ -124,7 +121,8 @@ def reset_password():
         flash("Invalid token.", "warning")
     return render_template("reset_password.html", form=form)
 
-@main_bp.route('/add_customer', methods=['GET', 'POST'])
+
+@main_bp.route("/add_customer", methods=["GET", "POST"])
 @login_required
 def add_customer():
     form = AddCustomerForm()
@@ -132,15 +130,19 @@ def add_customer():
         customer = Customer(name=form.customer_name.data, user_id=current_user.username)
         db.session.add(customer)
         db.session.commit()
-        flash('New customer added.')
-        return redirect(url_for('main.index'))
-    return render_template('add_customer.html', title='Add Customer', add_customer_form=form)
+        flash("New customer added.")
+        return redirect(url_for("main.index"))
+    return render_template(
+        "add_customer.html", title="Add Customer", add_customer_form=form
+    )
 
-@main_bp.route('/customers')
+
+@main_bp.route("/customers")
 @login_required
 def customers():
     customers = Customer.query.filter_by(user_id=current_user.username).all()
-    return render_template('customers.html', title='Customers', customers=customers)
+    return render_template("customers.html", title="Customers", customers=customers)
+
 
 @main_bp.route("/logout")
 def logout():

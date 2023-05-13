@@ -9,12 +9,12 @@ class Config(object):
     # Email configuration
     
     # Flask-Mail configuration
-    MAIL_SERVER = 'smtp.mail.yahoo.com'
+    MAIL_SERVER = 'smtp.zoho.com'
     MAIL_PORT = 465
     MAIL_USE_TLS = False
     MAIL_USE_SSL = True
-    MAIL_USERNAME = 'zlray@yahoo.com'
-    MAIL_PASSWORD = 'zuvr123456789'
+    MAIL_USERNAME = 'cyberprojhit@zohomail.com'
+    MAIL_PASSWORD = '2bskC135XFmk'
 
 
     # Password configuration
