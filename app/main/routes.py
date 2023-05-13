@@ -97,7 +97,7 @@ def forgot_password():
             msg = msg.replace("\n", "")
 
             mail.send_message(
-                msg, sender="cyberprojhit@zohomail.com", recipients=[user.email]
+                msg, sender="cyberprojhit@zohomail.com", recipients=[user.email],subject="Password Reset Request"
             )
             flash("A password reset token has been sent to your email.", "info")
             return redirect(url_for("main.reset_password"))
