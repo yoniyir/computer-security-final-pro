@@ -91,3 +91,8 @@ class ResetPasswordForm(FlaskForm):
     new_password = PasswordField('New Password', validators=[DataRequired()])
     new_password2 = PasswordField('Confirm New Password', validators=[DataRequired(), EqualTo('new_password')])
     submit = SubmitField('Reset Password')
+
+
+class AddCustomerForm(FlaskForm):
+    customer_name = StringField('Customer Name', validators=[DataRequired()])
+    submit = SubmitField('Add Customer')

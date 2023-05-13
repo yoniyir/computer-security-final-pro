@@ -1,5 +1,5 @@
 from flask import render_template, flash, redirect, url_for, request
-from flask_login import current_user, login_user, logout_user
+from flask_login import current_user, login_user, logout_user, login_required
 from app import db
 from app.forms import (
     LoginForm,
@@ -7,8 +7,9 @@ from app.forms import (
     ChangePasswordForm,
     ForgotPasswordForm,
     ResetPasswordForm,
+    AddCustomerForm,
 )
-from app.models import User
+from app.models import User, Customer
 from app.main import main_bp
 from datetime import datetime
 import hashlib
@@ -123,6 +124,23 @@ def reset_password():
         flash("Invalid token.", "warning")
     return render_template("reset_password.html", form=form)
 
+@main_bp.route('/add_customer', methods=['GET', 'POST'])
+@login_required
+def add_customer():
+    form = AddCustomerForm()
+    if form.validate_on_submit():
+        customer = Customer(name=form.customer_name.data, user_id=current_user.username)
+        db.session.add(customer)
+        db.session.commit()
+        flash('New customer added.')
+        return redirect(url_for('main.index'))
+    return render_template('add_customer.html', title='Add Customer', add_customer_form=form)
+
+@main_bp.route('/customers')
+@login_required
+def customers():
+    customers = Customer.query.filter_by(user_id=current_user.username).all()
+    return render_template('customers.html', title='Customers', customers=customers)
 
 @main_bp.route("/logout")
 def logout():

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Add a new customer</h1>
+    <form action="" method="post">
+        {{ add_customer_form.hidden_tag() }}
+        <p>
+            {{ add_customer_form.customer_name.label }}<br>
+            {{ add_customer_form.customer_name(size=32) }}<br>
+        </p>
+        <p>{{ add_customer_form.submit() }}</p>
+    </form>
+{% endblock %}
