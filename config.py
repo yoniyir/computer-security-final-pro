@@ -6,7 +6,6 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'app.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Email configuration
     
     # Flask-Mail configuration
     MAIL_SERVER = 'smtp.zoho.com'
@@ -23,5 +22,7 @@ class Config(object):
     PASSWORD_LOWERCASE = True
     PASSWORD_DIGITS = True
     PASSWORD_SPECIAL_CHARS = '!@#$%^&*()_+-='
+    PASSWORD_ATTEMPTS = 3
+    
 
 

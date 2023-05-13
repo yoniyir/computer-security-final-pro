@@ -12,10 +12,10 @@ from app.forms import (
 )
 from app.models import User, Customer
 from app.main import main_bp
-from datetime import datetime
 import hashlib
 import secrets
 from flask_mail import Message
+from datetime import datetime, timedelta
 
 
 @main_bp.route("/")
@@ -51,12 +51,32 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
-        if user is None or not user.check_password(form.password.data):
-            flash("Invalid username or password")
+        if user:
+            if not user.check_password(form.password.data):
+                user.failed_login_attempts += 1
+                user.last_failed_login = datetime.utcnow()
+                db.session.commit()
+                # Check if the user is banned
+                if user.failed_login_attempts >= 3:
+                    flash("Too many failed attempts. Please wait for one minute.")
+                    return redirect(url_for("main.login"))
+                flash("Invalid password")
+                return redirect(url_for("main.login"))
+            else:
+                if user.failed_login_attempts >= 3 and datetime.utcnow() < user.last_failed_login + timedelta(minutes=1):
+                    flash("You're currently locked out. Please wait for one minute.")
+                    return redirect(url_for("main.login"))
+                else:
+                    # If the login is successful, reset the failed attempts
+                    user.failed_login_attempts = 0
+                    db.session.commit()
+                    login_user(user, remember=form.remember_me.data)
+                    return redirect(url_for("main.index"))
+        else:
+            flash("Invalid username")
             return redirect(url_for("main.login"))
-        login_user(user, remember=form.remember_me.data)
-        return redirect(url_for("main.index"))
     return render_template("login.html", title="Sign In", form=form)
+
 
 
 @main_bp.route("/change_password", methods=["GET", "POST"])
