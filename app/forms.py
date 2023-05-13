@@ -88,9 +88,14 @@ class ForgotPasswordForm(FlaskForm):
 
 class ResetPasswordForm(FlaskForm):
     token = StringField('Token', validators=[DataRequired()])
+    submit = SubmitField('Validate token')
+
+class ResetPasswordForm2(FlaskForm):
     new_password = PasswordField('New Password', validators=[DataRequired()])
     new_password2 = PasswordField('Confirm New Password', validators=[DataRequired(), EqualTo('new_password')])
     submit = SubmitField('Reset Password')
+
+
 
 
 class AddCustomerForm(FlaskForm):

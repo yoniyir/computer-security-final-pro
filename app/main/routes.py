@@ -8,6 +8,7 @@ from app.forms import (
     ForgotPasswordForm,
     ResetPasswordForm,
     AddCustomerForm,
+    ResetPasswordForm2,
 )
 from app.models import User, Customer
 from app.main import main_bp
@@ -81,6 +82,8 @@ def change_password():
 
 @main_bp.route("/forgot_password", methods=["GET", "POST"])
 def forgot_password():
+    if not request.is_secure:
+        return "Please use HTTPS.", 403
     form = ForgotPasswordForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
@@ -96,9 +99,9 @@ def forgot_password():
             # Remove the newline character from the email header
             msg = msg.replace("\n", "")
 
-            mail.send_message(
-                msg, sender="cyberprojhit@zohomail.com", recipients=[user.email]
-            )
+            #mail.send_message(
+            #    msg, sender="cyberprojhit@zohomail.com", recipients=[user.email])
+            print(msg)
             flash("A password reset token has been sent to your email.", "info")
             return redirect(url_for("main.reset_password"))
         flash("No user found with that email address.", "warning")
@@ -107,31 +110,50 @@ def forgot_password():
 
 @main_bp.route("/reset_password", methods=["GET", "POST"])
 def reset_password():
+    if not request.is_secure:
+        return "Please use HTTPS.", 403
     form = ResetPasswordForm()
     if form.validate_on_submit():
         user = User.query.filter_by(
             password_reset_token=hashlib.sha1(form.token.data.encode()).hexdigest()
         ).first()
         if user:
-            user.set_password(form.new_password.data)
-            user.password_reset_token = None  # clear the token
             db.session.commit()
-            flash("Your password has been reset.", "success")
-            return redirect(url_for("main.login"))
+            flash("Valid Token.", "Now set the new password")
+            return redirect(url_for("main.reset_password_2", token=form.token.data))
         flash("Invalid token.", "warning")
     return render_template("reset_password.html", form=form)
 
+@main_bp.route("/reset_password_2", methods=["GET", "POST"])
+def reset_password_2():
+    if not request.is_secure:
+        return "Please use HTTPS.", 403
+    token = request.args.get("token")
+    form = ResetPasswordForm2()
+    if form.validate_on_submit():
+        user = User.query.filter_by(
+            password_reset_token=hashlib.sha1(token.encode()).hexdigest()
+        ).first()
+        user.set_password(form.new_password.data)
+        user.password_reset_token = None
+        db.session.commit()
+        flash("Your password has been changed.")
+        return redirect(url_for("main.index"))
+    return render_template("reset_password_2.html", form=form)
 
 @main_bp.route("/add_customer", methods=["GET", "POST"])
 @login_required
 def add_customer():
     form = AddCustomerForm()
     if form.validate_on_submit():
+        if not validate_customer_name(form.customer_name.data):
+            flash("Error, customer name must only contain letters.")
+            return redirect(url_for("main.add_customer"))
         customer = Customer(name=form.customer_name.data, user_id=current_user.username)
         db.session.add(customer)
         db.session.commit()
         flash("New customer added.")
-        return redirect(url_for("main.index"))
+        return render_template("add_customer.html",customer=form.customer_name.data,add_customer_form=form)
     return render_template(
         "add_customer.html", title="Add Customer", add_customer_form=form
     )
@@ -155,3 +177,10 @@ def before_request():
     if current_user.is_authenticated:
         current_user.last_seen = datetime.utcnow()
         db.session.commit()
+
+
+def validate_customer_name(name):
+    # check if the name includes anything other than letters
+    if not name.isalpha():
+        return False
+    return True

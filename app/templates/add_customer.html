@@ -10,4 +10,8 @@
         </p>
         <p>{{ add_customer_form.submit(class="btn btn-primary") }}</p>
     </form>
+    {% if customer %}
+        <p>Customer added successfully!</p>
+        <p>{{ customer }}</p>
+    {% endif %}
 {% endblock %}
