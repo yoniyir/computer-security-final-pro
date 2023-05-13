@@ -17,6 +17,11 @@ import secrets
 from flask_mail import Message
 from datetime import datetime, timedelta
 
+max_pass_attempts = 3
+
+
+
+
 
 @main_bp.route("/")
 @main_bp.route("/index")
@@ -57,13 +62,13 @@ def login():
                 user.last_failed_login = datetime.utcnow()
                 db.session.commit()
                 # Check if the user is banned
-                if user.failed_login_attempts >= 3:
+                if user.failed_login_attempts >= max_pass_attempts:
                     flash("Too many failed attempts. Please wait for one minute.")
                     return redirect(url_for("main.login"))
                 flash("Invalid password")
                 return redirect(url_for("main.login"))
             else:
-                if user.failed_login_attempts >= 3 and datetime.utcnow() < user.last_failed_login + timedelta(minutes=1):
+                if user.failed_login_attempts >= max_pass_attempts and datetime.utcnow() < user.last_failed_login + timedelta(minutes=1):
                     flash("You're currently locked out. Please wait for one minute.")
                     return redirect(url_for("main.login"))
                 else:
