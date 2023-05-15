@@ -18,6 +18,7 @@ from flask_mail import Message
 from datetime import datetime, timedelta
 from flask import current_app as app
 from werkzeug.security import check_password_hash
+import html
 
 @main_bp.route("/")
 @main_bp.route("/index")
@@ -186,9 +187,9 @@ def reset_password_2():
 def add_customer():
     form = AddCustomerForm()
     if form.validate_on_submit():
-        if not validate_customer_name(form.customer_name.data):
-            flash("Error, customer name must only contain letters.")
-            return redirect(url_for("main.add_customer"))
+
+        #name = validate_customer_name(form.customer_name.data) # safe to use
+        name = form.customer_name.data # unsafe to use
         customer = Customer(name=form.customer_name.data, user_id=current_user.username)
         db.session.add(customer)
         db.session.commit()
@@ -224,7 +225,5 @@ def before_request():
 
 
 def validate_customer_name(name):
-    # check if the name includes anything other than letters
-    if not name.isalpha():
-        return False
-    return True
+    name = str(name)
+    return html.escape(name)

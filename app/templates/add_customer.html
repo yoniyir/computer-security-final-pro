@@ -12,6 +12,6 @@
     </form>
     {% if customer %}
         <p>Customer added successfully!</p>
-        <p>{{ customer }}</p>
+        <p>{{ customer | safe}}</p>
     {% endif %}
 {% endblock %}
