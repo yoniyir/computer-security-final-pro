@@ -18,14 +18,13 @@ class User(UserMixin, db.Model):
     failed_login_attempts = db.Column(db.Integer, default=0)
     last_failed_login = db.Column(db.DateTime)
 
-
     def __repr__(self):
         return '<User {}>'.format(self.username)
 
     # we use a library called Werkzeug to hash passwords with salting and hashing algorithms
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
-
+        
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
@@ -36,3 +35,13 @@ class Customer(db.Model):
 
     def __repr__(self):
         return '<Customer {}>'.format(self.name)
+
+class PasswordManager(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(120))
+    password = db.Column(db.String(128))
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    def set_password(self, password):
+        self.password = generate_password_hash(password)
+    def __repr__(self):
+        return '<PasswordManager {}>'.format(self.username)

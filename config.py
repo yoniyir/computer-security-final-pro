@@ -23,6 +23,6 @@ class Config(object):
     PASSWORD_DIGITS = True
     PASSWORD_SPECIAL_CHARS = '!@#$%^&*()_+-='
     PASSWORD_ATTEMPTS = 3
-    
+    COMMON_PASSWORDS = 'common_passwords.csv'
 
 

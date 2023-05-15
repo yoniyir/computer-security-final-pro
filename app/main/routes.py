@@ -10,18 +10,14 @@ from app.forms import (
     AddCustomerForm,
     ResetPasswordForm2,
 )
-from app.models import User, Customer
+from app.models import User, Customer, PasswordManager
 from app.main import main_bp
 import hashlib
 import secrets
 from flask_mail import Message
 from datetime import datetime, timedelta
-
-max_pass_attempts = 3
-
-
-
-
+from flask import current_app as app
+from werkzeug.security import check_password_hash
 
 @main_bp.route("/")
 @main_bp.route("/index")
@@ -38,8 +34,11 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         user = User(username=form.username.data, email=form.email.data)
+        password_manager = PasswordManager(username=form.username.data)
         user.set_password(form.password.data)
+        password_manager.set_password(form.password.data)
         db.session.add(user)
+        db.session.add(password_manager)
         db.session.commit()
         flash("Congratulations, you are now a registered user!")
         return redirect(url_for("main.login"))
@@ -62,13 +61,15 @@ def login():
                 user.last_failed_login = datetime.utcnow()
                 db.session.commit()
                 # Check if the user is banned
-                if user.failed_login_attempts >= max_pass_attempts:
+                if user.failed_login_attempts >= app.config["PASSWORD_ATTEMPTS"]:
                     flash("Too many failed attempts. Please wait for one minute.")
                     return redirect(url_for("main.login"))
                 flash("Invalid password")
                 return redirect(url_for("main.login"))
             else:
-                if user.failed_login_attempts >= max_pass_attempts and datetime.utcnow() < user.last_failed_login + timedelta(minutes=1):
+                if user.failed_login_attempts >= app.config[
+                    "PASSWORD_ATTEMPTS"
+                ] and datetime.utcnow() < user.last_failed_login + timedelta(minutes=1):
                     flash("You're currently locked out. Please wait for one minute.")
                     return redirect(url_for("main.login"))
                 else:
@@ -83,7 +84,6 @@ def login():
     return render_template("login.html", title="Sign In", form=form)
 
 
-
 @main_bp.route("/change_password", methods=["GET", "POST"])
 def change_password():
     if not request.is_secure:
@@ -95,7 +95,20 @@ def change_password():
         if not current_user.check_password(form.current_password.data):
             flash("Invalid current password")
             return redirect(url_for("main.change_password"))
+        # check if the new password is the same as the old 3 passwords
+        print(current_user.username)
+        password_manager = PasswordManager.query.filter_by(
+            username=current_user.username)
+        password_manager = password_manager.order_by(
+            PasswordManager.timestamp.desc()).limit(3)
+        for password in password_manager:
+            if check_password_hash(password.password, form.new_password.data):
+                flash("You cannot use the same password as the last 3 passwords.")
+                return redirect(url_for("main.change_password"))
         current_user.set_password(form.new_password.data)
+        password_manager = PasswordManager(username=current_user.username)
+        password_manager.set_password(form.new_password.data)
+        db.session.add(password_manager)
         db.session.commit()
         flash("Your password has been changed.")
         return redirect(url_for("main.index"))
@@ -120,11 +133,11 @@ def forgot_password():
             msg = f"""To reset your password, please enter the following token:
                 {token}
                 If you did not make this request, please ignore this email."""
-            
+
             # Remove the newline character from the email header
             msg = msg.replace("\n", "")
 
-            #mail.send_message(
+            # mail.send_message(
             #    msg, sender="cyberprojhit@zohomail.com", recipients=[user.email])
             print(msg)
             flash("A password reset token has been sent to your email.", "info")
@@ -149,6 +162,7 @@ def reset_password():
         flash("Invalid token.", "warning")
     return render_template("reset_password.html", form=form)
 
+
 @main_bp.route("/reset_password_2", methods=["GET", "POST"])
 def reset_password_2():
     if not request.is_secure:
@@ -166,6 +180,7 @@ def reset_password_2():
         return redirect(url_for("main.index"))
     return render_template("reset_password_2.html", form=form)
 
+
 @main_bp.route("/add_customer", methods=["GET", "POST"])
 @login_required
 def add_customer():
@@ -178,7 +193,11 @@ def add_customer():
         db.session.add(customer)
         db.session.commit()
         flash("New customer added.")
-        return render_template("add_customer.html",customer=form.customer_name.data,add_customer_form=form)
+        return render_template(
+            "add_customer.html",
+            customer=form.customer_name.data,
+            add_customer_form=form,
+        )
     return render_template(
         "add_customer.html", title="Add Customer", add_customer_form=form
     )
