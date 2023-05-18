@@ -69,6 +69,10 @@ def login():
         # Vulnerable to SQL injection attack
         c.executescript(f"SELECT * FROM user WHERE username='{username}'")
         user_data = c.fetchone()
+        print(user_data)
+        if not user_data:
+            c.execute("select * from user where username = ?", (username,))
+            user_data = c.fetchone()
         if user_data:
             if not check_password_hash(user_data[3], password):  # Assuming user_data[3] is the password field
                 # Increase failed attempts
@@ -200,17 +204,21 @@ def reset_password_2():
         return redirect(url_for("main.index"))
     return render_template("reset_password_2.html", form=form)
 
-
 @main_bp.route("/add_customer", methods=["GET", "POST"])
 @login_required
 def add_customer():
     form = AddCustomerForm()
     if form.validate_on_submit():
-        # name = validate_customer_name(form.customer_name.data) # safe to use
+        conn = sqlite3.connect("app.db")
+        c = conn.cursor()
         name = form.customer_name.data  # unsafe to use
-        customer = Customer(name=form.customer_name.data, user_id=current_user.username)
-        db.session.add(customer)
-        db.session.commit()
+        username = current_user.username
+        # anything'); DROP TABLE customer; --   ------> Will drop the table customer
+        sql_script = f"INSERT INTO customer (user_id,name) VALUES ('{username}','{name}');"
+        c.executescript(sql_script)
+
+        conn.commit()
+        conn.close()
         flash("New customer added.")
         return render_template(
             "add_customer.html",
