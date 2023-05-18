@@ -17,14 +17,15 @@ import secrets
 from flask_mail import Message
 from datetime import datetime, timedelta
 from flask import current_app as app
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 import html
+import sqlite3
+
 
 @main_bp.route("/")
 @main_bp.route("/index")
 def index():
     return render_template("index.html", title="Home", current_user=current_user)
-
 
 @main_bp.route("/register", methods=["GET", "POST"])
 def register():
@@ -34,18 +35,23 @@ def register():
         return redirect(url_for("main.index"))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data)
-        password_manager = PasswordManager(username=form.username.data)
-        user.set_password(form.password.data)
-        password_manager.set_password(form.password.data)
-        db.session.add(user)
-        db.session.add(password_manager)
-        db.session.commit()
+        conn = sqlite3.connect("app.db")
+        c = conn.cursor()
+        # anything'); DROP TABLE user; SELECT ('1        -------> Will drop the table user
+        username = form.username.data
+        email = form.email.data
+        password = form.password.data
+        password = generate_password_hash(password)
+
+        sql_script = f"INSERT INTO user (password_hash,email,failed_login_attempts,username) VALUES ('{password}','{email}',0, '{username}');"
+        sql_script_2 = f"INSERT INTO password_manager (username, password) VALUES ('{username}', '{password}');"
+        c.executescript(f"{sql_script}\n{sql_script_2}")
+        
+        conn.commit()
+        conn.close()
         flash("Congratulations, you are now a registered user!")
         return redirect(url_for("main.login"))
     return render_template("register.html", title="Register", form=form)
-
-
 @main_bp.route("/login", methods=["GET", "POST"])
 def login():
     if not request.is_secure:
@@ -55,34 +61,45 @@ def login():
         return redirect(url_for("main.index"))
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user:
-            if not user.check_password(form.password.data):
-                user.failed_login_attempts += 1
-                user.last_failed_login = datetime.utcnow()
-                db.session.commit()
+        conn = sqlite3.connect("app.db")
+        c = conn.cursor()
+        # anything'; DROP TABLE user; -------> Will drop the table user
+        username = form.username.data
+        password = form.password.data
+        # Vulnerable to SQL injection attack
+        c.executescript(f"SELECT * FROM user WHERE username='{username}'")
+        user_data = c.fetchone()
+        if user_data:
+            if not check_password_hash(user_data[3], password):  # Assuming user_data[3] is the password field
+                # Increase failed attempts
+                c.executescript(f"UPDATE user SET failed_login_attempts = failed_login_attempts + 1 WHERE username = '{username}';")
+                conn.commit()
                 # Check if the user is banned
-                if user.failed_login_attempts >= app.config["PASSWORD_ATTEMPTS"]:
+                c.execute(f"SELECT failed_login_attempts FROM user WHERE username='{username}'")
+                attempts = c.fetchone()[0]
+
+                if attempts >= app.config["PASSWORD_ATTEMPTS"]:
                     flash("Too many failed attempts. Please wait for one minute.")
                     return redirect(url_for("main.login"))
+
                 flash("Invalid password")
                 return redirect(url_for("main.login"))
             else:
-                if user.failed_login_attempts >= app.config[
-                    "PASSWORD_ATTEMPTS"
-                ] and datetime.utcnow() < user.last_failed_login + timedelta(minutes=1):
-                    flash("You're currently locked out. Please wait for one minute.")
-                    return redirect(url_for("main.login"))
-                else:
-                    # If the login is successful, reset the failed attempts
-                    user.failed_login_attempts = 0
-                    db.session.commit()
-                    login_user(user, remember=form.remember_me.data)
-                    return redirect(url_for("main.index"))
+                # If the login is successful, reset the failed attempts
+                c.executescript(f"UPDATE user SET failed_login_attempts = 0 WHERE username = '{username}';")
+                conn.commit()
+
+                user = User.query.filter_by(username=username).first()  # Get the user object after password validation
+                login_user(user, remember=form.remember_me.data)
+                return redirect(url_for("main.index"))
         else:
             flash("Invalid username")
             return redirect(url_for("main.login"))
     return render_template("login.html", title="Sign In", form=form)
+
+
+
+
 
 
 @main_bp.route("/change_password", methods=["GET", "POST"])
@@ -99,9 +116,11 @@ def change_password():
         # check if the new password is the same as the old 3 passwords
         print(current_user.username)
         password_manager = PasswordManager.query.filter_by(
-            username=current_user.username)
+            username=current_user.username
+        )
         password_manager = password_manager.order_by(
-            PasswordManager.timestamp.desc()).limit(3)
+            PasswordManager.timestamp.desc()
+        ).limit(3)
         for password in password_manager:
             if check_password_hash(password.password, form.new_password.data):
                 flash("You cannot use the same password as the last 3 passwords.")
@@ -187,9 +206,8 @@ def reset_password_2():
 def add_customer():
     form = AddCustomerForm()
     if form.validate_on_submit():
-
-        #name = validate_customer_name(form.customer_name.data) # safe to use
-        name = form.customer_name.data # unsafe to use
+        # name = validate_customer_name(form.customer_name.data) # safe to use
+        name = form.customer_name.data  # unsafe to use
         customer = Customer(name=form.customer_name.data, user_id=current_user.username)
         db.session.add(customer)
         db.session.commit()
