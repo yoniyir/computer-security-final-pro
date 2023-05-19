@@ -20,6 +20,7 @@ from flask import current_app as app
 from werkzeug.security import check_password_hash, generate_password_hash
 import html
 import sqlite3
+import string
 
 
 @main_bp.route("/")
@@ -37,21 +38,33 @@ def register():
     if form.validate_on_submit():
         conn = sqlite3.connect("app.db")
         c = conn.cursor()
-        # anything'); DROP TABLE user; SELECT ('1        -------> Will drop the table user
         username = form.username.data
         email = form.email.data
         password = form.password.data
         password = generate_password_hash(password)
 
-        sql_script = f"INSERT INTO user (password_hash,email,failed_login_attempts,username) VALUES ('{password}','{email}',0, '{username}');"
-        sql_script_2 = f"INSERT INTO password_manager (username, password) VALUES ('{username}', '{password}');"
-        c.executescript(f"{sql_script}\n{sql_script_2}")
-        
+        # Vulnerable to SQL injection attack, we can use the following payload to drop the table user
+        # anything'); DROP TABLE user; SELECT ('1        -------> Will drop the table user
+        # ---------------------------------- Vulnerable code ----------------------------------
+        #sql_script = f"INSERT INTO user (password_hash,email,failed_login_attempts,username) VALUES ('{password}','{email}',0, '{username}');"
+        #sql_script_2 = f"INSERT INTO password_manager (username, password) VALUES ('{username}', '{password}');"
+        #c.executescript(f"{sql_script}\n{sql_script_2}")
+        # ----------------------------------- Protected Code ------------------------------------
+        # Protected code with Stored procedures
+        # We execute the stored procedure with the username, email and password as parameters to prevent SQL injection
+        try:
+            c.execute(f"INSERT INTO user ( email, password_hash,failed_login_attempts,username) VALUES ('{email}', '{password}',0,'{username}');")
+            c.execute(f"INSERT INTO password_manager (username, password) VALUES ('{username}', '{password}');")
+        except:
+            flash("One of the values you entered is not valid")
+            return redirect(url_for("main.register"))
         conn.commit()
         conn.close()
         flash("Congratulations, you are now a registered user!")
         return redirect(url_for("main.login"))
     return render_template("register.html", title="Register", form=form)
+
+
 @main_bp.route("/login", methods=["GET", "POST"])
 def login():
     if not request.is_secure:
@@ -65,14 +78,24 @@ def login():
         c = conn.cursor()
         # anything'; DROP TABLE user; -------> Will drop the table user
         username = form.username.data
-        password = form.password.data
-        # Vulnerable to SQL injection attack
-        c.executescript(f"SELECT * FROM user WHERE username='{username}'")
+        password = form.password.data   
+        # ---------------------------------- Vulnerable code ----------------------------------
+        
+        # c.executescript(f"SELECT * FROM user WHERE username='{username}'")
+        # user_data = c.fetchone()
+        # if not user_data:
+        #    c.execute("select * from user where username = ?", (username,))
+        #    user_data = c.fetchone()
+        
+        # ----------------------------------- Protected Code ------------------------------------
+        # Protected code with Stored procedures
+        # We execute the stored procedure with the username as parameter to prevent SQL injection
+        try:
+            c.execute(f"SELECT * FROM user WHERE username='{username}'")
+        except:
+            flash("Invalid username")
+            return redirect(url_for("main.login"))
         user_data = c.fetchone()
-        print(user_data)
-        if not user_data:
-            c.execute("select * from user where username = ?", (username,))
-            user_data = c.fetchone()
         if user_data:
             if not check_password_hash(user_data[3], password):  # Assuming user_data[3] is the password field
                 # Increase failed attempts
@@ -163,7 +186,9 @@ def forgot_password():
 
             # mail.send_message(
             #    msg, sender="cyberprojhit@zohomail.com", recipients=[user.email])
-            print(msg)
+            # Due to the limitations of the free plan of SMTP Mail, we cannot send emails to other domains so we will print the token instead
+
+            print(msg) # Print the token instead and use it to reset the password
             flash("A password reset token has been sent to your email.", "info")
             return redirect(url_for("main.reset_password"))
         flash("No user found with that email address.", "warning")
@@ -214,8 +239,28 @@ def add_customer():
         name = form.customer_name.data  # unsafe to use
         username = current_user.username
         # anything'); DROP TABLE customer; --   ------> Will drop the table customer
-        sql_script = f"INSERT INTO customer (user_id,name) VALUES ('{username}','{name}');"
-        c.executescript(sql_script)
+        # ---------------------------------- Vulnerable code ---------------------------------- 
+        
+        # sql_script = f"INSERT INTO customer (user_id,name) VALUES ('{username}','{name}');"
+        # c.executescript(sql_script)
+
+
+         # secured with Sanitation and Encoding
+        # ----------------------------------- Protected Code ------------------------------------
+
+
+        if(not validate_customer_name_by_check_spacial_char(form.customer_name.data)):
+            print(form.customer_name.data)
+            flash("Wrong costumer name, can accept only letters and digits")
+            return render_template(
+                "add_customer.html",
+                title="Add Customer",
+                add_customer_form=form,
+            )
+        else:
+            name = validate_customer_name_by_encoding(form.customer_name.data)
+            sql_script = f"INSERT INTO customer (user_id,name) VALUES ('{username}','{name}');"
+            c.executescript(sql_script)
 
         conn.commit()
         conn.close()
@@ -250,6 +295,14 @@ def before_request():
         db.session.commit()
 
 
-def validate_customer_name(name):
+def validate_customer_name_by_encoding(name):
     name = str(name)
     return html.escape(name)
+
+
+def validate_customer_name_by_check_spacial_char(name):
+    name = str(name)
+    for char in name:
+        if char not in string.ascii_letters and char not in string.digits:
+            return False
+    return True
