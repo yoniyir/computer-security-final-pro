@@ -260,7 +260,7 @@ def add_customer():
         else:
             name = validate_customer_name_by_encoding(form.customer_name.data)
             sql_script = f"INSERT INTO customer (user_id,name) VALUES ('{username}','{name}');"
-            c.executescript(sql_script)
+            c.execute(sql_script)
 
         conn.commit()
         conn.close()
