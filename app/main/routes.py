@@ -46,9 +46,12 @@ def register():
         # Vulnerable to SQL injection attack, we can use the following payload to drop the table user
         # anything'); DROP TABLE user; SELECT ('1        -------> Will drop the table user
         # ---------------------------------- Vulnerable code ----------------------------------
-        #sql_script = f"INSERT INTO user (password_hash,email,failed_login_attempts,username) VALUES ('{password}','{email}',0, '{username}');"
-        #sql_script_2 = f"INSERT INTO password_manager (username, password) VALUES ('{username}', '{password}');"
-        #c.executescript(f"{sql_script}\n{sql_script_2}")
+        """
+        sql_script = f"INSERT INTO user (password_hash,email,failed_login_attempts,username) VALUES ('{password}','{email}',0, '{username}');"
+        sql_script_2 = f"INSERT INTO password_manager (username, password) VALUES ('{username}', '{password}');"
+        c.executescript(f"{sql_script}\n{sql_script_2}")
+        """
+        # ----------------------------------- End of vulnerability  ------------------------------------
         # ----------------------------------- Protected Code ------------------------------------
         # Protected code with Stored procedures
         # We execute the stored procedure with the username, email and password as parameters to prevent SQL injection
@@ -58,6 +61,7 @@ def register():
         except:
             flash("One of the values you entered is not valid")
             return redirect(url_for("main.register"))
+        # ----------------------------------- End of Protected Code ------------------------------------
         conn.commit()
         conn.close()
         flash("Congratulations, you are now a registered user!")
@@ -80,23 +84,27 @@ def login():
         username = form.username.data
         password = form.password.data   
         # ---------------------------------- Vulnerable code ----------------------------------
-        
-        # c.executescript(f"SELECT * FROM user WHERE username='{username}'")
-        # user_data = c.fetchone()
-        # if not user_data:
-        #    c.execute("select * from user where username = ?", (username,))
-        #    user_data = c.fetchone()
-        
+        """
+        c.executescript(f"SELECT * FROM user WHERE username='{username}'")
+        user_data = c.fetchone()
+        if not user_data:
+            c.execute("select * from user where username = ?", (username,))
+            user_data = c.fetchone()
+        """
+        # ----------------------------------- End of vulnerability  ------------------------------------
         # ----------------------------------- Protected Code ------------------------------------
         # Protected code with Stored procedures
         # We execute the stored procedure with the username as parameter to prevent SQL injection
-
+        
         try:
             c.execute(f"SELECT * FROM user WHERE username='{username}'")
         except:
             flash("Invalid username")
             return redirect(url_for("main.login"))
         user_data = c.fetchone()
+
+        # ----------------------------------- End of Protected Code ------------------------------------
+        
         if user_data:
             if not check_password_hash(user_data[3], password):  # Assuming user_data[3] is the password field
                 # Increase failed attempts
@@ -243,15 +251,15 @@ def add_customer():
         username = current_user.username
         # anything'); DROP TABLE customer; --   ------> Will drop the table customer
         # ---------------------------------- Vulnerable code ---------------------------------- 
-
-        #sql_script = f"INSERT INTO customer (user_id,name) VALUES ('{username}','{name}');"
-        #c.executescript(sql_script)
-
+        
+        sql_script = f"INSERT INTO customer (user_id,name) VALUES ('{username}','{name}');"
+        c.executescript(sql_script)
+        
 
          # secured with Sanitation and Encoding
         # ----------------------------------- Protected Code ------------------------------------
 
-        
+        """
         if(not validate_customer_name_by_check_spacial_char(form.customer_name.data)):
             print(form.customer_name.data)
             flash("Wrong costumer name, can accept only letters and digits")
@@ -264,7 +272,9 @@ def add_customer():
             name = validate_customer_name_by_encoding(form.customer_name.data)
             sql_script = f"INSERT INTO customer (user_id,name) VALUES ('{username}','{name}');"
             c.execute(sql_script)
+        """
 
+        # ----------------------------------- End of Protected Code ------------------------------------
         conn.commit()
         conn.close()
         flash("New customer added.")

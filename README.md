@@ -15,6 +15,8 @@ This is a demonstration application developed for the computer security course. 
 ### Prerequisites
 
 Before starting, please ensure you have Python installed on your system. This project uses a virtual environment (venv), which helps manage Python dependencies. 
+In order to run the app, install our certificates on Google Chrome.
+
 
 ### Installation
 
@@ -45,6 +47,7 @@ Before starting, please ensure you have Python installed on your system. This pr
 ## App Overview
 
 The application revolves around user and customer data, and demonstrates potential security vulnerabilities involving user passwords and customer information.
+Our app uses TLS 1.2 and SSL Protocol
 
 
 ## Application Routes
