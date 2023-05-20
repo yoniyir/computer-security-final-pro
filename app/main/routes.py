@@ -176,6 +176,7 @@ def forgot_password():
         if user:
             token = secrets.token_hex()
             user.password_reset_token = hashlib.sha1(token.encode()).hexdigest()
+            # The token is encoded with SHA1 and stored in the database
             db.session.commit()
             # Send the token to the user's email
             msg = f"""To reset your password, please enter the following token:
@@ -185,15 +186,16 @@ def forgot_password():
             # Remove the newline character from the email header
             msg = msg.replace("\n", "")
 
-            # mail.send_message(
-            #    msg, sender="cyberprojhit@zohomail.com", recipients=[user.email])
+            mail.send_message(
+                msg, sender=app.config["MAIL_USERNAME"], recipients=[user.email])
             # Due to the limitations of the free plan of SMTP Mail, we cannot send emails to other domains so we will print the token instead
 
             print(msg) # Print the token instead and use it to reset the password
             flash("A password reset token has been sent to your email.", "info")
             return redirect(url_for("main.reset_password"))
-        flash("No user found with that email address.", "warning")
-    return render_template("forgot_password.html", form=form)
+        else:
+            flash("No user found with that email address.", "warning")
+            return render_template("forgot_password.html", form=form)
 
 
 @main_bp.route("/reset_password", methods=["GET", "POST"])
