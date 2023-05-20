@@ -90,6 +90,7 @@ def login():
         # ----------------------------------- Protected Code ------------------------------------
         # Protected code with Stored procedures
         # We execute the stored procedure with the username as parameter to prevent SQL injection
+
         try:
             c.execute(f"SELECT * FROM user WHERE username='{username}'")
         except:
@@ -240,15 +241,15 @@ def add_customer():
         username = current_user.username
         # anything'); DROP TABLE customer; --   ------> Will drop the table customer
         # ---------------------------------- Vulnerable code ---------------------------------- 
-        
-        # sql_script = f"INSERT INTO customer (user_id,name) VALUES ('{username}','{name}');"
-        # c.executescript(sql_script)
+
+        #sql_script = f"INSERT INTO customer (user_id,name) VALUES ('{username}','{name}');"
+        #c.executescript(sql_script)
 
 
          # secured with Sanitation and Encoding
         # ----------------------------------- Protected Code ------------------------------------
 
-
+        
         if(not validate_customer_name_by_check_spacial_char(form.customer_name.data)):
             print(form.customer_name.data)
             flash("Wrong costumer name, can accept only letters and digits")

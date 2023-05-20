@@ -9,7 +9,6 @@ This is a demonstration application developed for the computer security course. 
   - [Installation](#installation)
 - [App Overview](#app-overview)
 - [File Descriptions](#file-descriptions)
-- [Usage](#usage)
 
 ## Getting Started
 
@@ -23,7 +22,7 @@ Before starting, please ensure you have Python installed on your system. This pr
 2. Navigate into the project directory.
 3. Create a virtual environment: 
     ```
-    python3 -m venv venv
+    python -m venv venv
     ```
 4. Activate the virtual environment:
     - On Windows:
