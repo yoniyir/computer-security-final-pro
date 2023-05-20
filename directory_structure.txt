@@ -4,9 +4,7 @@ communication_ltd/
     │   │   ├── css/
     │   │   ├── js/
     │   ├── main/
-    │   │   ├── __init__.py
     │   │   ├── routes.py
-
     │   ├── templates/
     │   │   ├── base.html
     │   │   ├── index.html
@@ -15,8 +13,10 @@ communication_ltd/
     │   │   ├── change_password.html
     │   │   ├── forgot_password.html
     │   │   ├── system.html
+    │   │   ├── add_customer.html
+    │   │   ├── reset_password.html
+    │   │   ├── reset_password_2.html
     │   ├── __init__.py
-    │   ├── config.py
     │   ├── models.py
     │   ├── forms.py
     ├── env/
@@ -25,3 +25,8 @@ communication_ltd/
     ├── config.py
     ├── requirements.txt
     ├── run.py
+    ├── key.pem
+    ├── cert.pem
+    ├── csr.pem
+    ├── app.db
+
